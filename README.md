@@ -34,14 +34,14 @@ Setup all the necessary modules.
 1. If needed, download and unpack the RobotStudio environment from `envs`
 
 In RobotStudio:
-3. Go to `Controller` tab
-4. Select `RAPID`
-5. Create a new Program Module and paste the RAPID script (.txt file) from `src`
+1. Go to `Controller` tab
+1. Select `RAPID`
+1. Create a new Program Module and paste the RAPID script (.txt file) from `src`
 1. Click `RAPID` and `Apply`
 
 Setup Python node:
 1. Copy and paste the Python script and be ready to run it
-2. Make sure you have installed ```Import socket ``` python library
+2. Make sure you have installed ```Import socket``` python library
 
 In RobotStudio (or FlexPendant on real robot):
 1. Set program pointer to ruotine by:
