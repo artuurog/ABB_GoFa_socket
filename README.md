@@ -23,12 +23,12 @@ Establish a communication between a real ABB robot (or RobotStudio simulation) a
 ## Citation
 If you found this repo useful, please consider mentioning it in your work
 
-<pre><code>```
-@misc{yourgithubusername_projectname_2025,
-  author       = {Your Name},
-  title        = {Project Name},
+<pre><code>
+@misc{ABB_Gofa_socket_2025,
+  author       = {Arturo Giacobbe},
+  title        = {ABB GoFa socket},
   year         = 2025,
-  howpublished = {\url{https://github.com/yourgithubusername/your-repo}},
+  howpublished = {\url{https://github.com/artuurog/ABB_GoFa_socket}},
 }
-</code></pre>```
+</code></pre>
 
