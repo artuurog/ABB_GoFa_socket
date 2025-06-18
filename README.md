@@ -15,6 +15,8 @@ The client-server communication is setup through IP address and port number.
     IP address: 192.168.125.1\
     port 1025
 
+  The IP address and port number must match in both Python node and RAPID RobotStudio module.
+
 ## Structure
 
 - The `src` folder contains a RAPID module (.txt file) and a Python script
