@@ -42,7 +42,10 @@ Setup Python node:
 2. Make sure you have ```Import socket ``` installed
 
 In RobotStudio (or FlexPendant on real robot):
-1. Set program pointer to 
+1. Set program pointer to ruotine by:
+    1. Under `Controller/RAPID` tab
+    1. Expand on `TCP_socket` module
+    2. Right-click `main` and `Set Program Pointer to Routine` 
 
 
 ## Error troubleshooting
