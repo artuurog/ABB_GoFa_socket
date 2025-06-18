@@ -30,22 +30,32 @@ The current configuration has been tested on:
 
 ## Usage
 
-Setup all the necessary modules.\In RobotStudio:
+Setup all the necessary modules.
 1. If needed, download and unpack the RobotStudio environment from `envs`
-2. Go to `Controller` tab
-3. Select `RAPID`
-4. Create a new Program Module and paste the RAPID script (.txt file) from `src`
+
+In RobotStudio:
+3. Go to `Controller` tab
+4. Select `RAPID`
+5. Create a new Program Module and paste the RAPID script (.txt file) from `src`
 1. Click `RAPID` and `Apply`
 
 Setup Python node:
 1. Copy and paste the Python script and be ready to run it
-2. Make sure you have ```Import socket ``` installed
+2. Make sure you have installed ```Import socket ``` python library
 
 In RobotStudio (or FlexPendant on real robot):
 1. Set program pointer to ruotine by:
     1. Under `Controller/RAPID` tab
     1. Expand on `TCP_socket` module
-    2. Right-click `main` and `Set Program Pointer to Routine` 
+    2. Right-click `main` and `Set Program Pointer to Routine`
+1. If running a simulation (virtual controller)
+    1. Go to `Simulation` tab and press `Play`
+    2. The robot will move to a predefined home position and start the socket server
+1. If running on real robot
+    1. Go to the `Code` app on the FlexPendant
+    2. Make sure Program Pointer is set to  `TCP_socket`
+    3. Press play button
+    4. The robot will move to a predefined home position and start the socket server
 
 
 ## Error troubleshooting
