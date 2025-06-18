@@ -6,11 +6,13 @@ A RAPID script is used to create a server, while the user node (e.g. Python scri
 The client-server communication is setup through IP address and port number.
 
 - Robotstudio simulation (virtual controller) + python node on the same PC:
-    IP address 127.0.0.1
+
+    IP address 127.0.0.1\
     port 5000
 
 - Real robot controller + python node:
-    IP address: 192.168.125.1
+  
+    IP address: 192.168.125.1\
     port 1025
 
 ## Structure
