@@ -39,7 +39,7 @@ Setup all the necessary modules. \In RobotStudio:
 
 Setup Python node:
 1. Copy and paste the Python script and be ready to run it
-2. Make sure you have <pre> ```python Import socket ``` </pre> installed
+2. Make sure you have ```Import socket ``` installed
 
 In RobotStudio (or FlexPendant on real robot):
 1. Set program pointer to 
