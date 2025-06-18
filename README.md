@@ -52,11 +52,13 @@ In RobotStudio (or FlexPendant on real robot):
     1. Go to `Simulation` tab and press `Play`
     2. The robot will move to a predefined home position and start the socket server
 1. If running on real robot
+    1. Connect to robot controller via MGMT port 
     1. Go to the `Code` app on the FlexPendant
     2. Make sure Program Pointer is set to  `TCP_socket`
     3. Press play button
     4. The robot will move to a predefined home position and start the socket server
 
+Once the RAPID module is running, start the Python node to establish connection.
 
 ## Error troubleshooting
 
