@@ -21,3 +21,14 @@ Establish a communication between a real ABB robot (or RobotStudio simulation) a
 ## Contacts
 
 ## Citation
+If you found this repo useful, please consider mentioning it in your work
+
+<pre><code>```
+@misc{yourgithubusername_projectname_2025,
+  author       = {Your Name},
+  title        = {Project Name},
+  year         = 2025,
+  howpublished = {\url{https://github.com/yourgithubusername/your-repo}},
+}
+</code></pre>```
+
