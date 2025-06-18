@@ -30,7 +30,7 @@ The current configuration has been tested on:
 
 ## Usage
 
-Setup all the necessary modules. \In RobotStudio:
+Setup all the necessary modules.\In RobotStudio:
 1. If needed, download and unpack the RobotStudio environment from `envs`
 2. Go to `Controller` tab
 3. Select `RAPID`
