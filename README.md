@@ -66,6 +66,11 @@ In RobotStudio (or FlexPendant on real robot):
 
 ## Contacts
 
+For questions, suggestions or contributions, feel free to contact:
+
+- **Arturo Giacobbe** – [arturo.giacobbe@polimi.it](mailto:arturo.giacobbe@polimi.it)
+
+
 ## Citation
 If you found this repo useful, please consider mentioning it in your work
 
