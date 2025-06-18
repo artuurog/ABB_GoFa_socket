@@ -23,17 +23,26 @@ The client-server communication is setup through IP address and port number.
 ## Disclaimer
 The current configuration has been tested on:
 - Robot: ABB 15000-5-95 GoFa 5kg
+- Omnicore controller
 - RobotWare version 7.12.0
 - Python script executed in Spyder v6
 - RobotStudio 2025
 
 ## Usage
 
-Setup all the necessary modules:
-1. Download and unpack the RobotStudio environment from `envs`
-1. Upload the RAPID module to the robot controller (real or sim)
-1. Copy and paste the Python script and be ready to run it
+Setup all the necessary modules. \In RobotStudio:
+1. If needed, download and unpack the RobotStudio environment from `envs`
+2. Go to `Controller` tab
+3. Select `RAPID`
+4. Create a new Program Module and paste the RAPID script (.txt file) from `src`
+1. Click `RAPID` and `Apply`
 
+Setup Python node:
+1. Copy and paste the Python script and be ready to run it
+2. Make sure you have <pre> ```python Import socket ``` </pre> installed
+
+In RobotStudio (or FlexPendant on real robot):
+1. Set program pointer to 
 
 
 ## Error troubleshooting
