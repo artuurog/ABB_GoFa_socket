@@ -1,8 +1,8 @@
-# ABB_GoFa_socket
+# ABB GoFa socket
 
-Establish a communication between a real ABB robot (or RobotStudio simulation) and a custom node through socket.
+Establish a connection between a real ABB robot (or RobotStudio simulation) and a custom (python) node through socket communication.
 
-A RAPID script is used to create a server, while the user node (e.g. Python script) acts as a client.
+A RAPID module is used to create a server, while the user node (e.g. Python script) acts as a client.
 The client-server communication is setup through IP address and port number.
 
 - Robotstudio simulation (virtual controller) + python node on the same PC:
@@ -15,12 +15,12 @@ The client-server communication is setup through IP address and port number.
     IP address: 192.168.125.1\
     port 1025
 
-  The IP address and port number must match in both Python node and RAPID RobotStudio module.
+  The IP address and port number must match in both Python node and RAPID module in RobotStudio.
 
 ## Structure
 
 - The `src` folder contains a RAPID module (.txt file) and a Python script
-- The `envs` folder contains a RobotStudio environment for simulating a GoFa arm
+- The `envs` folder contains a RobotStudio environment for simulating a GoFa arm with a virtual controller
 
 ## Disclaimer
 The current configuration has been tested on:
@@ -37,36 +37,40 @@ Setup all the necessary modules.
 
 In RobotStudio:
 1. Go to `Controller` tab
-1. Select `RAPID`
+1. Expand `RAPID` from the dropdown menu on the left 
 1. Create a new Program Module and paste the RAPID script (.txt file) from `src`
 1. Click `RAPID` and `Apply`
 
 Setup Python node:
 1. Copy and paste the Python script and be ready to run it
-2. Make sure you have installed ```Import socket``` python library
+2. Make sure you have installed the ```socket``` python library
 
-In RobotStudio (or FlexPendant on real robot):
-1. Set program pointer to ruotine by:
-    1. Under `Controller/RAPID` tab
-    1. Expand on `TCP_socket` module
-    2. Right-click `main` and `Set Program Pointer to Routine`
+In RobotStudio (or FlexPendant for the real controller):
+1. Set Program Pointer to `main` ruotine:
+    1. Go to `Controller/RAPID` tab
+    1. Expand `TCP_socket` module
+    2. Right-click `main` routine and `Set Program Pointer to Routine`
 1. If running a simulation (virtual controller)
     1. Go to `Simulation` tab and press `Play`
     2. The robot will move to a predefined home position and start the socket server
 1. If running on real robot
     1. Connect to robot controller via MGMT port 
     1. Go to the `Code` app on the FlexPendant
-    2. Make sure Program Pointer is set to  `TCP_socket`
-    3. Press play button
-    4. The robot will move to a predefined home position and start the socket server
+    1. Make sure Program Pointer is set to  `TCP_socket`
+    1. Press play button
+    1. The robot will move to a predefined home position and start the socket server
 
 Once the RAPID module is running, start the Python node to establish connection.
 
 ## Error troubleshooting
 
   ### `Socket Error` 
+  Make sure that the IP address and port number match both in the python node and RAPID module
 
   ### `Robot Error`
+  Make sure that the trajectory is feasible to follow for the robot:
+  - There are no parallel consecutive joints
+  - The robot does not pass through a singular configuration
 
 ## Contacts
 
