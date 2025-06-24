@@ -19,27 +19,27 @@ Real robot controller + python node:
 """
 
 # Import socket module 
-import socket                
+import socket           
   
 # Create a socket object 
 s = socket.socket()          
   
 # Define the port on which you want to connect 
-port = 1025
-# port = 5000 
+#port = 1025 # real controller
+port = 5000  # sim controller
  
 # connect to the server on local computer 
-# s.connect(('127.0.0.1', port))
-# print("Connecting...")
+s.connect(('127.0.0.1', port))
+print("Connecting...")
 
 # Connect to real robot controller
-try:
-    s.connect(('192.168.125.1', port)) 
-except:
-    while True:
-        if (s.connect(('192.168.125.1', port)) != True ):
-            break
-        print("trying to connect")
+# try:
+#     s.connect(('192.168.125.1', port)) 
+# except:
+#     while True:
+#         if (s.connect(('192.168.125.1', port)) != True ):
+#             break
+#         print("trying to connect")
         
   
 # Receive data from the server
@@ -52,30 +52,14 @@ if data:
     print("Robot position:", data.decode())
         
     
-#%% Send coordinates to robot controller - Single point
 
-# Coordinates
-pose = [-250, 0, 500, 0, 0, 0] # XYZ + 3 rotations
-
-
-# Convert to string
-pose_str = ",".join([str(x) for x in pose])
-
-# Send
-s.send(bytes(pose_str, 'utf-8'))
-
-# Receive OK message from RAPID server
-data= s.recv(4096)
-if data:
-    print("RAPID: ", data.decode())
-
-s.close()    
-
-#%% Trajectory (3 points)
+#%% Trajectory (N points)
     
-pose = [[-250, 50, 500, 0, 0, 0],
-        [-250, 250, 500, 0, 0, 0],
-        [-250, 200, 700, 0, 0, 0]
+pose = [[-400, 60, 400, 0, 0, 0],
+        [-400, 250, 400, 0, 0, 0],
+        [-400, 200, 700, 0, 0, 0],
+        [-400, 60, 700, 0, 0, 0],
+        [-400, 60, 400, 0, 0, 0]
         ]
 
 for i in range(len(pose)):
