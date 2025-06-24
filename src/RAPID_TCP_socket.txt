@@ -2,8 +2,8 @@ MODULE TCP_socket
     
     ! DEFINE HOME POSITION
     !CONST robtarget rhome:=[[17.2, -272.49,617.81],[0.00887573,0.99979,-0.000213541,0.0184803],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    !CONST robtarget rhome:=[[-251,209,461],[0,0,0,1],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST jointtarget jhome := [ [ 180, -20, 20, 0, 0, 0], [ 0, 9E9, 9E9, 9E9, 9E9, 9E9]];
+    !CONST robtarget rhome:=[[-250,209,461],[0,0,0,1],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST jointtarget jhome := [ [ 175, -20, 20, 0, 90, 0], [ 0, 9E9, 9E9, 9E9, 9E9, 9E9]];
     
     VAR string client_ip;
     VAR num time_val := WAIT_MAX; 
@@ -256,7 +256,7 @@ PROC server_recover()
         VAR bool flag;
         VAR intnum hi;
         VAR num count;   
-        VAR robtarget currentPose;  
+        VAR pos currentPose;  
         VAR num startPos;
         VAR num commaPos;
         
@@ -299,11 +299,11 @@ PROC server_recover()
             SocketSend client_socket \Str := "RAPID: Connection is successful";
             
             ! Read current robot position and print it in the client window
-            currentPose := CRobT(\Tool:=tool0\WObj:=wobj0);
+            currentPose := CPos(\Tool:=tool0\WObj:=wobj0);
             SocketSend client_socket \str := "Current robot position:" + 
-                            "  X=" + NumToStr(currentPose.trans.x, 2) +
-                            "  Y=" + NumToStr(currentPose.trans.y, 2) +
-                            "  Z=" + NumToStr(currentPose.trans.z, 2);
+                            "  X=" + NumToStr(currentPose.x, 2) +
+                            "  Y=" + NumToStr(currentPose.y, 2) +
+                            "  Z=" + NumToStr(currentPose.z, 2);
 
             
             !WaitTime\InPos, 3;      
@@ -357,7 +357,7 @@ PROC server_recover()
     	        rtemp.trans.z:=pos3;
                 
                 ! Move robot to target
-                MoveL rtemp,v1000,z50,tool0\WObj:=wobj0;
+                MoveL rtemp,v500,z50,tool0\WObj:=wobj0;
                 WaitTime\InPos, 0.1;
                 
                 rtemp.rot:=OrientZYX(pos6,pos5,pos4);
