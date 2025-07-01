@@ -67,6 +67,7 @@ Once the RAPID module is running, start the Python node to establish connection.
   ### `Socket Error` 
   - Make sure that the IP address and port number match both in the python node and RAPID module
   - RobotStudio returns a socket error even if the socket connection is closed by the client node
+  - To reset the error, set the Program Pointer back to the routine in RobotStudio
 
   ### `Robot Error`
   Make sure that the trajectory is feasible to follow for the robot:
