@@ -74,6 +74,14 @@ Once the RAPID module is running, start the Python node to establish connection.
   - There are no parallel consecutive joints
   - The robot does not pass through a singular configuration
 
+  ### `Firewall settings in RobotStudio`
+  Make sure that Rapid sockets are not blocked by the Firewall Manager in RobotStudio. To enable Rapid socket:
+  1. Go to `Controller` > click `Configuration` > `Communication`
+  2. Select `Firewall Manager`
+  3. Double click on `RapidSockets` and set all the values to `Yes`
+  4. Restart the controller
+
+
 ## Contacts
 
 For questions, suggestions or contributions, feel free to contact:
