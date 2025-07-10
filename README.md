@@ -97,7 +97,9 @@ If you found this repo useful, please consider mentioning it in your work
   author       = {Arturo Giacobbe},
   title        = {ABB GoFa socket},
   year         = 2025,
-  url          = {https://github.com/artuurog/ABB_GoFa_socket},
+  publisher    = {GitHub},
+  journal      = {GitHub repository},
+  howpublished = {\url{https://github.com/artuurog/ABB_GoFa_socket}},
 }
 </code></pre>
 
