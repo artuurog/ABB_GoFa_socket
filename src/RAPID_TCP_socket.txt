@@ -1,17 +1,13 @@
 MODULE TCP_socket
 
     ! DEFINE HOME POSITION
-    !CONST robtarget rhome:=[[17.2, -272.49,617.81],[0.00887573,0.99979,-0.000213541,0.0184803],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    !CONST robtarget rhome:=[[-250,209,461],[0,0,0,1],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST jointtarget jhome:=[[175,-20,20,0,90,0],[0,9E9,9E9,9E9,9E9,9E9]];
+    !CONST robtarget rhome:=[[-250,209,400],[0,0,0,1],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    LOCAL CONST jointtarget jhome:=[[140,-42,68,0,64,0],[0,9E9,9E9,9E9,9E9,9E9]];
     !CONST jointtarget jhome:=[[0,0,0,0,0,0],[0,9E9,9E9,9E9,9E9,9E9]];
 
 
-    VAR string client_ip;
-    VAR num time_val:=WAIT_MAX;
-    PERS bool again;
-    VAR bool box:=FALSE;
-    PERS num cnt:=0;
+    LOCAL VAR string client_ip;
+    LOCAL VAR num time_val:=WAIT_MAX;
 
 
     PROC server_recover()
@@ -87,16 +83,15 @@ MODULE TCP_socket
             !SocketBind server_socket, "192.168.125.1", 1025;
             SocketListen server_socket;
             TPWrite "Socket server created.";
-            !l1:
-            !Reset output2;
+
             ConfL\on;
             TPWrite "Moving robot to home position...";
+
             !MoveL rhome,v1000,z50,tool0\WObj:=wobj0;
             MoveAbsJ jhome,v500,z50,tool0\WObj:=wobj0;
             TPWrite "Done moving robot to home.";
 
             WaitTime\InPos,0.1;
-            !IF again=FALSE or cnt = 0 THEN
             IF (SocketGetStatus(server_socket)=SOCKET_CLOSED) SocketCreate server_socket;
 
             IF (SocketGetStatus(server_socket)=SOCKET_CREATED and SocketGetStatus(server_socket)<>SOCKET_BOUND) SocketBind server_socket,"127.0.0.1",5000;
@@ -110,9 +105,6 @@ MODULE TCP_socket
 
 
             WHILE TRUE DO
-                ! second while loop in main function to
-                again:=FALSE;
-
                 count:=0;
                 WaitTime\InPos,1;
                 SocketSend client_socket\Str:="RAPID: Connection is successful";
@@ -179,7 +171,6 @@ MODULE TCP_socket
                         TPWrite "all points recieved";
                     ENDIF
                 ENDFOR
-                cnt:=0;
                 value1g:=StrToVal(value1,pos1);
                 value2g:=StrToVal(value2,pos2);
                 value3g:=StrToVal(value3,pos3);
@@ -225,11 +216,18 @@ MODULE TCP_socket
     ENDPROC
 
 
-    PROC main()
+    PROC manual_insertion()
 
         VAR socketdev server_socket;
         VAR socketdev client_socket;
         VAR string receive_string;
+
+        ! Variables for managing gripper opening
+        VAR string receive_gripper;
+        VAR bool gripperg;
+        VAR dionum gripper_open;
+        VAR dionum gripper_close;
+
         VAR string client_ip;
         VAR string xstr;
         VAR string ystr;
@@ -271,20 +269,18 @@ MODULE TCP_socket
             ! first while loop in main func  to creat socket server
             TPWrite "Creating socket server...";
             SocketCreate server_socket;
-            SocketBind server_socket,"127.0.0.1",5000;
-            !SocketBind server_socket, "192.168.125.1", 1025;
+            !SocketBind server_socket,"127.0.0.1",5000;
+            SocketBind server_socket,"192.168.125.1",1025;
             SocketListen server_socket;
             TPWrite "Socket server created.";
-            !l1:
-            !Reset output2;
+
             ConfL\on;
             TPWrite "Moving robot to home position...";
-            !MoveL rhome,v1000,z50,tool0\WObj:=wobj0;
+            !MoveL rhome,v200,z50,tool0\WObj:=wobj0;
             MoveAbsJ jhome,v500,z50,tool0\WObj:=wobj0;
             TPWrite "Done moving robot to home.";
 
             WaitTime\InPos,0.1;
-            !IF again=FALSE or cnt = 0 THEN
             IF (SocketGetStatus(server_socket)=SOCKET_CLOSED) SocketCreate server_socket;
 
             IF (SocketGetStatus(server_socket)=SOCKET_CREATED and SocketGetStatus(server_socket)<>SOCKET_BOUND) SocketBind server_socket,"127.0.0.1",5000;
@@ -298,13 +294,12 @@ MODULE TCP_socket
 
 
             WHILE TRUE DO
-                ! second while loop in main function to receive values through socket
-                again:=FALSE;
 
                 count:=0;
-                WaitTime\InPos,1;
+                WaitTime\InPos,5;
                 SocketSend client_socket\Str:="RAPID: Connection is successful";
 
+                WaitTime\InPos,5;
                 ! Read current robot position and print it in the client window
                 currentPose:=CPos(\Tool:=tool0\WObj:=wobj0);
                 SocketSend client_socket\str:="Current robot position:"+
@@ -312,13 +307,30 @@ MODULE TCP_socket
                             "  Y="+NumToStr(currentPose.y,2)+
                             "  Z="+NumToStr(currentPose.z,2);
 
+                WaitTime\InPos,5;
 
-                !WaitTime\InPos, 3;
+                ! Set initial values of gripper
+                !SetDO EGP_CLOSE_G1, 1;
+                !SetDO EGP_OPEN_G1, 0;
+
+                IF DInput(EGP_IS_CLOSE_G1)=1 THEN
+                    SocketSend client_socket\str:="RAPID: Gripper state CLOSE.";
+                ELSEIF DInput(EGP_IS_OPEN_G1)=1 THEN
+                    SocketSend client_socket\str:="RAPID: Gripper state OPEN.";
+                ENDIF
+
+                WaitTime\InPos,5;
                 ! Receive vector from python node
 
                 WHILE TRUE DO
                     SocketReceive client_socket\str:=receive_string\Time:=WAIT_MAX;
                     TPWrite "Received: "+receive_string;
+                    SocketSend client_socket\str:="RAPID: coordinates received.";
+
+                    SocketReceive client_socket\str:=receive_gripper;
+                    TPWrite "Received gripper: "+receive_gripper;
+                    SocketSend client_socket\str:="RAPID: gripper received.";
+
 
                     ! Split string into values
                     startPos:=1;
@@ -364,15 +376,225 @@ MODULE TCP_socket
                     rtemp.trans.z:=pos3;
 
                     ! Move robot to target
-                    MoveL rtemp,v500,z50,tool0\WObj:=wobj0;
+                    MoveL rtemp,v50,z50,tool0\WObj:=wobj0;
                     WaitTime\InPos,0.1;
 
                     rtemp.rot:=OrientZYX(pos6,pos5,pos4);
                     nobjr:=rtemp.rot;
                     rtemp.rot:=nobjr;
 
+                    ! Open or close gripper
+                    gripperg:=StrToVal(receive_gripper,gripper_open);
+                    IF gripper_open=1 THEN
+                        SetDO EGP_OPEN_G1,1;
+                        SetDO EGP_CLOSE_G1,0;
+                    ELSEIF gripper_open=0 THEN
+                        SetDO EGP_CLOSE_G1,1;
+                        SetDO EGP_OPEN_G1,0;
 
-                    SocketSend client_socket\str:="OK";
+                    ELSE
+                        ErrWrite\W,"Gripper open value","The value of gripper opening must be either 0 or 1";
+                    ENDIF
+
+
+
+                    SocketSend client_socket\str:="RAPID: OK";
+                ENDWHILE
+
+
+
+            ENDWHILE
+            SocketClose server_socket;
+            SocketClose client_socket;
+
+        ENDWHILE
+
+
+
+
+    ERROR
+        IF ERRNO=ERR_SOCK_TIMEOUT THEN
+            RETRY;
+        ELSEIF ERRNO=SOCKET_CLOSED THEN
+            server_recover;
+            RETRY;
+        ENDIF
+    ENDPROC
+
+    PROC keyboard_jog()
+
+        VAR socketdev server_socket;
+        VAR socketdev client_socket;
+        VAR string receive_string;
+
+        ! Variables for managing gripper opening
+        VAR string receive_gripper;
+        VAR bool gripperg;
+        VAR dionum gripper_open;
+        VAR dionum gripper_close;
+
+        VAR string client_ip;
+        VAR string xstr;
+        VAR string ystr;
+        VAR string zstr;
+        VAR string q1str;
+        VAR string q2str;
+        VAR string q3str;
+        VAR string value7;
+        VAR bool value1g;
+        VAR bool value2g;
+        VAR bool value3g;
+        VAR bool value4g;
+        VAR bool value5g;
+        VAR bool value6g;
+        VAR bool value7g;
+        VAR num pos1;
+        VAR num pos2;
+        VAR num pos3;
+        VAR num pos4;
+        VAR num pos5;
+        VAR num pos6;
+        VAR num pos7;
+        VAR pose objr;
+        VAR robtarget rtemp;
+        VAR orient nobjr;
+        VAR num count;
+        VAR pos currentPose;
+        VAR num startPos;
+        VAR num commaPos;
+
+
+
+        WHILE TRUE DO
+            ! first while loop in main func  to creat socket server
+            TPWrite "Creating socket server...";
+            SocketCreate server_socket;
+            !SocketBind server_socket,"127.0.0.1",5000;
+            SocketBind server_socket,"192.168.125.1",1025;
+            SocketListen server_socket;
+            TPWrite "Socket server created.";
+
+            ConfL\on;
+            TPWrite "Moving robot to home position...";
+            !MoveL rhome,v200,z50,tool0\WObj:=wobj0;
+            MoveAbsJ jhome,v500,z50,tool0\WObj:=wobj0;
+            TPWrite "Done moving robot to home.";
+
+            WaitTime\InPos,0.1;
+            IF (SocketGetStatus(server_socket)=SOCKET_CLOSED) SocketCreate server_socket;
+
+            IF (SocketGetStatus(server_socket)=SOCKET_CREATED and SocketGetStatus(server_socket)<>SOCKET_BOUND) SocketBind server_socket,"127.0.0.1",5000;
+
+            IF (SocketGetStatus(server_socket)=SOCKET_BOUND) SocketListen server_socket;
+
+            SocketAccept server_socket,client_socket
+           \ClientAddress:=client_ip;
+            TPWrite "Client at "+client_ip+" connected.";
+
+
+            WHILE TRUE DO
+
+                count:=0;
+                WaitTime\InPos,5;
+                SocketSend client_socket\Str:="RAPID: Connection is successful";
+
+                WaitTime\InPos,5;
+                ! Read current robot position and print it in the client window
+                currentPose:=CPos(\Tool:=tool0\WObj:=wobj0);
+                SocketSend client_socket\str:=
+                                NumToStr(currentPose.x,2)+
+                                ", "+NumToStr(currentPose.y,2)+
+                                ", "+NumToStr(currentPose.z,2);
+
+                WaitTime\InPos,5;
+
+
+                IF DInput(EGP_IS_CLOSE_G1)=1 THEN
+                    SocketSend client_socket\str:="0";
+                ELSEIF DInput(EGP_IS_OPEN_G1)=1 THEN
+                    SocketSend client_socket\str:="1";
+                ENDIF
+
+                WaitTime\InPos,5;
+                TPWrite "Ready to jog";
+                ! Receive vector from python node
+
+                WHILE TRUE DO
+
+
+                    SocketReceive client_socket\str:=receive_string\Time:=WAIT_MAX;
+                    TPWrite "Received string: "+receive_string;
+
+
+                    ! Split string into values
+                    startPos:=1;
+                    FOR idx FROM 1 TO 6 DO
+                        commaPos:=StrFind(receive_string,startPos,",");
+                        IF commaPos>0 THEN
+                            IF idx=1 THEN
+                                xstr:=StrPart(receive_string,startPos,commaPos-startPos);
+                            ELSEIF idx=2 THEN
+                                ystr:=StrPart(receive_string,startPos,commaPos-startPos);
+                            ELSEIF idx=3 THEN
+                                zstr:=StrPart(receive_string,startPos,commaPos-startPos);
+                            ELSEIF idx=4 THEN
+                                q1str:=StrPart(receive_string,startPos,commaPos-startPos);
+                            ELSEIF idx=5 THEN
+                                q2str:=StrPart(receive_string,startPos,commaPos-startPos);
+                            ELSE
+                                q3str:=StrPart(receive_string,startPos,StrLen(receive_string)-startPos+1);
+                            ENDIF
+                        ELSE
+                            ! Error handling if comma not found
+                        ENDIF
+                        startPos:=commaPos+1;
+                    ENDFOR
+
+                    ! Last substring after final comma
+                    receive_gripper:=StrPart(receive_string,startPos,StrLen(receive_string)-startPos+1);
+
+                    ! Convert to num
+                    value1g:=StrToVal(xstr,pos1);
+                    value2g:=StrToVal(ystr,pos2);
+                    value3g:=StrToVal(zstr,pos3);
+                    value4g:=StrToVal(q1str,pos4);
+                    value5g:=StrToVal(q2str,pos5);
+                    value6g:=StrToVal(q3str,pos6);
+
+                    ! Construct robtarget
+                    objr.trans.x:=pos1;
+                    objr.trans.y:=pos2;
+                    objr.trans.z:=pos3;
+                    objr.rot:=OrientZYX(pos6,pos5,pos4);
+                    rtemp:=CRobT(\Tool:=tool0);
+                    rtemp.trans.x:=pos1;
+                    rtemp.trans.y:=pos2;
+                    rtemp.trans.z:=pos3;
+
+                    ! Move robot to target
+                    MoveL rtemp,v50,z50,tool0\WObj:=wobj0;
+                    !WaitTime\InPos,0.1;
+
+                    rtemp.rot:=OrientZYX(pos6,pos5,pos4);
+                    nobjr:=rtemp.rot;
+                    rtemp.rot:=nobjr;
+
+                    ! Open or close gripper
+                    gripperg:=StrToVal(receive_gripper,gripper_open);
+                    IF gripper_open=1 THEN
+                        SetDO EGP_OPEN_G1,1;
+                        SetDO EGP_CLOSE_G1,0;
+                    ELSEIF gripper_open=0 THEN
+                        SetDO EGP_CLOSE_G1,1;
+                        SetDO EGP_OPEN_G1,0;
+
+                    ELSE
+                        ErrWrite\W,"Gripper open value","The value of gripper opening must be either 0 or 1";
+                    ENDIF
+
+
+
+                    !SocketSend client_socket\str:="OK";
                 ENDWHILE
 
 
