@@ -1,0 +1,286 @@
+MODULE motor_torque
+
+    ! =============================================
+    ! TOOL & WORKOBJECT
+    ! =============================================
+    LOCAL PERS tooldata tFlange := [TRUE,
+        [[0, 0, 0], [1, 0, 0, 0]],
+        [1, [0, 0, 50], [1, 0, 0, 0], 0, 0, 0]];
+
+    LOCAL PERS wobjdata wBase := [FALSE, TRUE, "",
+        [[0, 0, 0], [1, 0, 0, 0]],
+        [[0, 0, 0], [1, 0, 0, 0]]];
+
+    ! =============================================
+    ! PATH PARAMETERS
+    ! =============================================
+    LOCAL CONST num CENTER_X    := -400;
+    LOCAL CONST num CENTER_Y    := 200;
+    LOCAL CONST num RADIUS      := 150;
+    LOCAL CONST num Z_START     := 600;
+    LOCAL CONST num Z_END       := 200;
+    LOCAL CONST num N_TURNS     := 6;
+    LOCAL CONST num ANGLE_STEP  := 10;
+
+    LOCAL CONST speeddata vPath := [100, 500, 5000, 1000];
+    LOCAL CONST orient DOWN_ORIENT := [0, 1, 0, 0];
+
+    ! =============================================
+    ! LOGGING PARAMETERS
+    ! =============================================
+    LOCAL CONST num SAMPLE_TIME := 0.1;
+    LOCAL CONST num MAX_SAMPLES := 3000;
+    LOCAL CONST num N_COLS      := 11;
+
+    ! Full controller path. For USB, use for example:
+    ! "RemovableDisk1:/motor_torque.csv"
+    LOCAL CONST string LOG_PATH := "HOME:/motor_torque.csv";
+    LOCAL CONST string CSV_HEADER :=
+        "t_s,phase,x_mm,y_mm,z_mm,T1_Nm,T2_Nm,T3_Nm,T4_Nm,T5_Nm,T6_Nm";
+
+    LOCAL CONST num PH_APPROACH := 0;
+    LOCAL CONST num PH_HELIX    := 1;
+    LOCAL CONST num PH_RETURN   := 2;
+
+    LOCAL VAR num logData{MAX_SAMPLES, N_COLS};
+    LOCAL VAR num nSamples := 0;
+
+    LOCAL VAR intnum irSample;
+    LOCAL VAR clock clkLog;
+    LOCAL VAR num phase := 0;
+    LOCAL VAR bool overflowWarned := FALSE;
+    LOCAL VAR bool loggingActive := FALSE;
+
+    ! =============================================
+    ! MAIN PROCEDURE
+    ! =============================================
+    LOCAL PROC main()
+
+        VAR robtarget pStart;
+
+        ConfL \Off;
+        ConfJ \Off;
+
+        ! Create the CSV before any robot motion. If HOME: is not writable,
+        ! execution stops here instead of finishing the path without a file.
+        InitLogFile;
+
+        pStart := HelixPoint(0);
+        StartLogging;
+
+        phase := PH_APPROACH;
+        MoveJ Offs(pStart, 0, 0, 50), v200, z10,
+              tFlange \WObj:=wBase;
+        MoveL pStart, v100, fine, tFlange \WObj:=wBase;
+
+        phase := PH_HELIX;
+        RunHelix;
+
+        phase := PH_RETURN;
+        MoveL Offs(CRobT(\Tool:=tFlange \WObj:=wBase), 0, 0, 100),
+              v200, z10, tFlange \WObj:=wBase;
+        MoveAbsJ [[0,0,0,0,90,0],[9E9,9E9,9E9,9E9,9E9,9E9]],
+                 v200, fine, tFlange \WObj:=wBase;
+
+        StopLogging;
+        SaveLog;
+        PrintPeakTorques;
+
+        TPWrite "Helix complete. Samples: " \Num:=nSamples;
+
+    ERROR
+        ! Preserve all samples collected before a recoverable runtime error.
+        IF loggingActive THEN
+            StopLogging;
+        ENDIF
+        IF nSamples > 0 THEN
+            SaveLog;
+            TPWrite "Partial torque log saved after program error.";
+        ENDIF
+        RAISE;
+    ENDPROC
+
+    ! =============================================
+    ! HELIX MOTION
+    ! =============================================
+    LOCAL PROC RunHelix()
+
+        VAR num totalAngle;
+        VAR num angle;
+
+        totalAngle := N_TURNS * 360;
+        angle := ANGLE_STEP;
+
+        WHILE angle < totalAngle DO
+            MoveL HelixPoint(angle), vPath, z5,
+                  tFlange \WObj:=wBase;
+            angle := angle + ANGLE_STEP;
+        ENDWHILE
+
+        MoveL HelixPoint(totalAngle), vPath, fine,
+              tFlange \WObj:=wBase;
+
+    ENDPROC
+
+    LOCAL FUNC robtarget HelixPoint(num angle)
+
+        VAR num x;
+        VAR num y;
+        VAR num z;
+
+        x := CENTER_X + RADIUS * Cos(angle);
+        y := CENTER_Y + RADIUS * Sin(angle);
+        z := Z_START - (Z_START - Z_END) * angle /
+             (N_TURNS * 360);
+
+        RETURN [[x, y, z],
+                DOWN_ORIENT,
+                [0, 0, 0, 0],
+                [9E9, 9E9, 9E9, 9E9, 9E9, 9E9]];
+
+    ENDFUNC
+
+    ! =============================================
+    ! TORQUE LOGGING
+    ! =============================================
+    LOCAL PROC InitLogFile()
+
+        VAR iodev logFile;
+        VAR bool fileOpen := FALSE;
+
+        Open LOG_PATH, logFile \Write;
+        fileOpen := TRUE;
+        Write logFile, CSV_HEADER;
+        Close logFile;
+        fileOpen := FALSE;
+
+        IF NOT IsFile(LOG_PATH) THEN
+            TPWrite "motor_torque: CSV was not created in HOME:";
+            Stop;
+        ENDIF
+
+        TPWrite "Torque CSV created: " + LOG_PATH;
+
+    ERROR
+        IF fileOpen THEN
+            Close logFile;
+        ENDIF
+        TPWrite "motor_torque: cannot create CSV. ERRNO=" \Num:=ERRNO;
+        RAISE;
+    ENDPROC
+
+    LOCAL PROC StartLogging()
+
+        nSamples := 0;
+        overflowWarned := FALSE;
+        loggingActive := FALSE;
+
+        ClkReset clkLog;
+        ClkStart clkLog;
+
+        IDelete irSample;
+        CONNECT irSample WITH SampleTorque;
+        ITimer SAMPLE_TIME, irSample;
+        loggingActive := TRUE;
+
+        TakeSample;
+
+    ENDPROC
+
+    LOCAL PROC StopLogging()
+
+        IF NOT loggingActive THEN
+            RETURN;
+        ENDIF
+
+        IDelete irSample;
+        loggingActive := FALSE;
+        TakeSample;
+        ClkStop clkLog;
+
+    ENDPROC
+
+    LOCAL TRAP SampleTorque
+        TakeSample;
+    ENDTRAP
+
+    LOCAL PROC TakeSample()
+
+        VAR pos tcp;
+
+        IF nSamples >= MAX_SAMPLES THEN
+            IF NOT overflowWarned THEN
+                TPWrite "motor_torque: buffer full; sampling stopped";
+                overflowWarned := TRUE;
+            ENDIF
+            RETURN;
+        ENDIF
+
+        tcp := CPos(\Tool:=tFlange \WObj:=wBase);
+
+        Incr nSamples;
+        logData{nSamples, 1} := ClkRead(clkLog);
+        logData{nSamples, 2} := phase;
+        logData{nSamples, 3} := tcp.x;
+        logData{nSamples, 4} := tcp.y;
+        logData{nSamples, 5} := tcp.z;
+
+        FOR ax FROM 1 TO 6 DO
+            logData{nSamples, 5 + ax} := GetMotorTorque(ax);
+        ENDFOR
+
+    ENDPROC
+
+    LOCAL PROC SaveLog()
+
+        VAR iodev logFile;
+        VAR bool fileOpen := FALSE;
+
+        ! \Write intentionally replaces the header-only file made at startup.
+        Open LOG_PATH, logFile \Write;
+        fileOpen := TRUE;
+        Write logFile, CSV_HEADER;
+
+        FOR i FROM 1 TO nSamples DO
+            FOR c FROM 1 TO N_COLS - 1 DO
+                Write logFile, NumToStr(logData{i, c}, 3) + "," \NoNewLine;
+            ENDFOR
+            Write logFile, NumToStr(logData{i, N_COLS}, 3);
+        ENDFOR
+
+        Close logFile;
+        fileOpen := FALSE;
+
+        IF IsFile(LOG_PATH) THEN
+            TPWrite "Torque log saved: " + LOG_PATH;
+            TPWrite "CSV size [bytes]: " \Num:=FileSize(LOG_PATH);
+        ELSE
+            TPWrite "motor_torque: CSV missing after Close";
+        ENDIF
+
+    ERROR
+        IF fileOpen THEN
+            Close logFile;
+        ENDIF
+        TPWrite "motor_torque: CSV write failed. ERRNO=" \Num:=ERRNO;
+        RETURN;
+    ENDPROC
+
+    LOCAL PROC PrintPeakTorques()
+
+        VAR num peak;
+
+        FOR ax FROM 1 TO 6 DO
+            peak := 0;
+            FOR i FROM 1 TO nSamples DO
+                IF Abs(logData{i, 5 + ax}) > peak THEN
+                    peak := Abs(logData{i, 5 + ax});
+                ENDIF
+            ENDFOR
+            TPWrite "Axis " + NumToStr(ax, 0) +
+                    " peak |torque| [Nm]: " \Num:=peak;
+        ENDFOR
+
+    ENDPROC
+
+ENDMODULE
